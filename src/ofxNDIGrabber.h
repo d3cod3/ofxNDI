@@ -60,6 +60,7 @@ public ofThread
   
   ofPixels _pixels;
   ofImage _image;
+  ofTexture _tex;
   vector<ofVideoDevice> _devices;
   
   bool _initialized;

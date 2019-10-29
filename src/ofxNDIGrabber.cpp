@@ -49,11 +49,13 @@ void ofxNDIGrabber::update(){
       case NDIlib_frame_type_video:
       _newFrame = true;
       ofLogVerbose("ofxNDIGrabber") << "Video data received "<< video_frame.xres << ", "<< video_frame.yres;
+
       _pixels.clear();
       if(!_pixels.isAllocated()){
         _pixels.allocate(video_frame.xres, video_frame.yres, 4);
       }
-      for(int y = 0; y < video_frame.yres; y++){
+
+      /*for(int y = 0; y < video_frame.yres; y++){
         for(int x = 0; x < video_frame.xres-3; x++){
           auto index = (x*4 + y*_pixels.getWidth()*4);
           _pixels.setColor(x,y,
@@ -64,7 +66,13 @@ void ofxNDIGrabber::update(){
           
           
         }
+      }*/
+
+      if(!_tex.isAllocated()){
+          _tex.allocate(video_frame.xres, video_frame.yres, GL_RGBA);
       }
+      _tex.loadData(video_frame.p_data, video_frame.xres, video_frame.yres, GL_BGRA);
+
       //            ofLogNotice("pixels")<<"width "<<_pixels.getWidth()<<" height "<<_pixels.getHeight();
       NDIlib_recv_free_video_v2(_receiver, &video_frame);
       break;
@@ -82,19 +90,25 @@ void ofxNDIGrabber::update(){
       break;
     }
   }
-  _image.setFromPixels(_pixels);
+  //_image.setFromPixels(_pixels);
 }
 
 void ofxNDIGrabber::draw(float x, float y) const {
-  if(_image.isAllocated()){
+  /*if(_image.isAllocated()){
     _image.draw(x,y);
-  }
+  }*/
+    if(_tex.isAllocated()){
+        _tex.draw(x,y);
+    }
 }
 
 void ofxNDIGrabber::draw(float x, float y, float width, float height) const {
-  if(_image.isAllocated()){
+  /*if(_image.isAllocated()){
     _image.draw(x, y, width, height);
-  }
+  }*/
+    if(_tex.isAllocated()){
+        _tex.draw(x, y, width, height);
+    }
 }
 
 void ofxNDIGrabber::close(){
@@ -170,6 +184,9 @@ std::string ofxNDIGrabber::getNDIVersion(){
 ofPixels &ofxNDIGrabber::getPixels()
 {
   _newFrame = false;
+
+  _tex.readToPixels(_pixels);
+
   return _pixels;
 }
 
