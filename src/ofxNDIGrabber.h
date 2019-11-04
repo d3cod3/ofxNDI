@@ -39,6 +39,8 @@ public ofThread
   
   ofPixels& getPixels() override;
   const ofPixels& getPixels() const override;
+
+  ofTexture getTexture() { return _tex; }
   
   std::string getNDIVersion();
   
