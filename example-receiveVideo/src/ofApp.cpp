@@ -5,7 +5,7 @@ ofApp::ofApp(){
 }
 void ofApp::update(){
     _ndiGrabber.update();
-    ofLogNotice("ofApp")<<"pixel at "<<_ndiGrabber.getPixels().getColor(100, 100);
+    //ofLogNotice("ofApp")<<"pixel at "<<_ndiGrabber.getPixels().getColor(100, 100);
     ofSetWindowTitle(ofToString(ofGetFrameRate()));
 }
 void ofApp::draw(){

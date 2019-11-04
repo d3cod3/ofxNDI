@@ -52,11 +52,11 @@ osx:
 
 	# any special flag that should be passed to the linker when using this
 	# addon, also used for system libraries with -lname
-	ADDON_LDFLAGS += -rpath ../../../../addons/ofxNDI/libs/libndi/lib/osx_x64
+        #ADDON_LDFLAGS += -rpath ../../../../addons/ofxNDI/libs/libndi/lib/osx_x64
 
 
 	ADDON_LIBS  =
-	ADDON_LIBS += libs/libndi/lib/osx_x64/libndi.3.dylib
+        ADDON_LIBS += libs/libndi/lib/osx_x64/libndi.3.dylib
 
 
 	# All of the libs, including those inside the Plugins folder, do need to be

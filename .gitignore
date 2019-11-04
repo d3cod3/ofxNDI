@@ -32,7 +32,6 @@
 *.app
 *. debug
 obj/
-*.qbs
 *.qbs.user
 bin/
 .DS_Store
@@ -101,4 +100,10 @@ Desktop.ini
 =======
 example*/bin
 example*/obj
+
+build-example-sendVideo-Desktop-Debug/*
+build-example-receiveVideo-Desktop-Debug/*
+build-example-sendVideo-Desktop-Releaase/*
+build-example-receiveVideo-Desktop-Release/*
+
 >>>>>>> master
