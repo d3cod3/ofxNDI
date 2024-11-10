@@ -7,9 +7,15 @@ meta:
 
 osx:
 
-        ADDON_LIBS  =
-        ADDON_LIBS += libs/NDI/lib/osx/x64/libndi.5.dylib
+    ADDON_LIBS  =
+    ADDON_LIBS += libs/NDI/lib/osx/x64/libndi.5.dylib
+
+linux64:
+
+	ADDON_LIBS =
+	ADDON_LIBS += libs/NDI/lib/x86_64-linux-gnu/libndi.so.5.6.1
 
 vs:
+
 	ADDON_DLLS_TO_COPY += windows-copy-to-bin/Processing.NDI.Lib.Advanced.x64.dll
 	ADDON_DLLS_TO_COPY += windows-copy-to-bin/Processing.NDI.Lib.Advanced.x86.dll
