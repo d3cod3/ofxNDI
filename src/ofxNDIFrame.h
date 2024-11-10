@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ofMain.h"
 #include "ofxNDI.h"
 #include <Processing.NDI.Advanced.h>
 

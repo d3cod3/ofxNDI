@@ -7,7 +7,6 @@ meta:
 
 osx:
 
-        ADDON_LDFLAGS = -Xlinker -rpath -Xlinker @executable_path
         ADDON_LIBS  =
         ADDON_LIBS += libs/NDI/lib/osx/x64/libndi.5.dylib
 
