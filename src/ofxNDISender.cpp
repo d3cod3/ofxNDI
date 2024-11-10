@@ -1,135 +1,84 @@
 #include "ofxNDISender.h"
+#include "ofLog.h"
+#include <Processing.NDI.Advanced.h>
 
-ofxNDISender::ofxNDISender(std::string name){
-	const NDIlib_send_create_t descriptor = {name.c_str(), NULL, TRUE, FALSE};
-	_sender = NDIlib_send_create(&descriptor);
-	if (!NDIlib_initialize())
-	{
-		ofLogFatalError("ofxNDISender") << "cannot run NDI";
-		ofLogNotice("ofxNDI") << "Most likely because the CPU is not sufficient (see SDK documentation). You can check this directly with a call to NDIlib_is_supported_CPU()";
-	}
+using namespace std;
 
-	unsigned int width = 640;
-	unsigned int height = 360;
-
-	_frame = {
-			// Resolution
-			(int)width,
-			(int)height,
-			// We will stick with RGB color space. Note however that it is generally better to
-			// use YCbCr colors spaces if you can since they get end-to-end better video quality
-			// and better performance because there is no color dconversion
-			NDIlib_FourCC_type_BGRA,
-			// The frame-eate
-			30000, 1001,
-			// The aspect ratio (16:9)
-			(float)(width) /
-					height,
-			// This is not a progressive frame
-			FALSE,
-			// Timecode (synthesized for us !)
-			NDIlib_send_timecode_synthesize,
-			// The video memory used for this frame
-			(uint8_t *)malloc(width * height * 4),
-			// The line to line stride of this image
-			(int)(width)*4};
-	memset((void *)_frame.p_data, 0, width * height * 4);
-}
-
-void ofxNDISender::setMetaData(std::string longName,
-															 std::string shortName,
-															 std::string manufacturer,
-															 std::string version,
-															 std::string session,
-															 std::string modelName,
-															 std::string serial)
+ofxNDI::Source ofxNDISender::getSourceName() const
 {
-
-	NDIlib_metadata_frame_t metaData;
-
-	std::string xml = "<ndi_product long_name=\"" + longName + "\" " +
-										"short_name=\"" + shortName + "\" " +
-										"manufacturer=\"" + manufacturer + "\" " +
-										"version=\"" + version + "\" " +
-										"session=\"" + session + "\" " +
-										"model_name=\"" + modelName + "\" " +
-										"serial=\"" + serial + "\">";
-
-	std::vector<char> chars(xml.c_str(), xml.c_str() + xml.size() + 1u);
-
-	metaData.p_data = &chars[0];
-	metaData.timecode = NDIlib_send_timecode_synthesize;
-	NDIlib_send_add_connection_metadata(_sender, &metaData);
+	return *NDIlib_send_get_source_name(instance_);
 }
 
-void ofxNDISender::send(ofPixels & pixels){
-	if (_frame.xres != pixels.getWidth() || _frame.yres != pixels.getHeight())
-	{
-		_frame = {
-				// Resolution
-				(int)(pixels.getWidth()),
-				(int)(pixels.getHeight()),
-				// We will stick with RGB color space. Note however that it is generally better to
-				// use YCbCr colors spaces if you can since they get end-to-end better video quality
-				// and better performance because there is no color dconversion
-				NDIlib_FourCC_type_BGRA,
-				// The frame-eate
-				30000, 1001,
-				// The aspect ratio (16:9)
-				(float)(pixels.getWidth()) /
-						(float)(pixels.getHeight()),
-				// This is not a progressive frame
-				FALSE,
-				// Timecode (synthesized for us !)
-				NDIlib_send_timecode_synthesize,
-				// The video memory used for this frame
-				(uint8_t *)malloc(pixels.getWidth() * pixels.getHeight() * 4),
-				// The line to line stride of this image
-				(int)(pixels.getWidth()) * 4};
+bool ofxNDISender::setup(const string &name, const string &group, bool clock_video, bool clock_audio)
+{
+	NDIlib_send_create_t create_settings = {
+		name.c_str(),
+		group.c_str(),
+		clock_video,
+		clock_audio };
+	instance_ = NDIlib_send_create_v2(&create_settings);
+	if(!instance_) {
+		ofLogError("NDI Sender failed to initialize");
+		return false;
 	}
+	return true;
+}
 
-	switch (pixels.getPixelFormat())
-	{
-	case OF_PIXELS_RGB:
-	case OF_PIXELS_BGR:
-	{
-		int index = 0;
-		for (auto line : pixels.getLines())
-		{
-			for (auto pixel : line.getPixels())
-			{
-				_frame.p_data[index] = pixel[2];
-				_frame.p_data[index + 1] = pixel[1];
-				_frame.p_data[index + 2] = pixel[0];
-				_frame.p_data[index + 3] = 255;
-				index += 4;
-			}
-		}
-		break;
+void ofxNDISender::clear()
+{
+	if(instance_) {
+		NDIlib_send_destroy(instance_);
+		instance_ = nullptr;
 	}
-	case OF_PIXELS_RGBA:
-	case OF_PIXELS_BGRA:
-	{
-		int index = 0;
-		for (auto line : pixels.getLines())
-		{
-			for (auto pixel : line.getPixels())
-			{
-				_frame.p_data[index] = pixel[2];
-				_frame.p_data[index + 1] = pixel[1];
-				_frame.p_data[index + 2] = pixel[0];
-				_frame.p_data[index + 3] = pixel[3];
-				index += 4;
-			}
-		}
-	}
-	default:
-	{
-		ofLogError("ofxNDISender") << "pixel type " << ofToString(pixels.getPixelFormat()) << " is not supported yet";
-		return;
-		break;
-	}
-	}
+}
 
-	NDIlib_send_send_video_v2(_sender, &_frame);
+int ofxNDISender::getNumConnected(int64_t timeout_ms) const
+{
+	return isSetup() ? NDIlib_send_get_no_connections(instance_, timeout_ms) : 0;
+}
+
+bool ofxNDISender::isConnected(int64_t timeout_ms) const
+{
+	return getNumConnected(timeout_ms) > 0;
+}
+
+void ofxNDISender::addConnectionMetadata(const string &metadata, int64_t timecode) const
+{
+	const NDIlib_metadata_frame_t data = {
+		static_cast<int>(metadata.length()+1),
+		timecode,
+		const_cast<char*>(metadata.c_str())
+	};
+	NDIlib_send_add_connection_metadata(instance_, &data);
+}
+void ofxNDISender::clearConnectionMetadata() const
+{
+	NDIlib_send_clear_connection_metadata(instance_);
+}
+
+void ofxNDISender::setFailover(const ofxNDI::Source &source) const
+{
+	auto src = source.toV1();
+	NDIlib_send_set_failover(instance_, &src);
+}
+bool ofxNDISender::getTally(bool *on_program, bool *on_preview, int64_t timeout_ms) const
+{
+	NDIlib_tally_t tally;
+	if(NDIlib_send_get_tally(instance_, &tally, timeout_ms)) {
+		if(on_program) *on_program = tally.on_program;
+		if(on_preview) *on_preview = tally.on_preview;
+		return true;
+	}
+	return false;
+}
+bool ofxNDISender::setTally(bool on_program, bool on_preview) const
+{
+	NDIlib_tally_t tally{on_program, on_preview};
+	return NDIlib_send_set_tally(instance_, &tally);
+}
+
+ofxNDISender::~Sender()
+{
+	clear();
+	NDIlib_destroy();
 }
